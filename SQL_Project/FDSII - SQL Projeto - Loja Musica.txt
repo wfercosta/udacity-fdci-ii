@@ -1,0 +1,81 @@
+/* Correlacao entre pais e genero musical */
+
+SELECT
+  C.Country AS country,
+  G.Name AS genre,
+  COUNT(I.InvoiceId) AS qty
+FROM Invoice I
+INNER JOIN InvoiceLine L
+  ON I.InvoiceId = L.InvoiceId
+INNER JOIN Track T
+  ON L.TrackId = T.TrackId
+INNER JOIN Genre G
+  ON T.GenreId = G.GenreId
+INNER JOIN Customer C
+  ON I.CustomerId = C.CustomerId
+GROUP BY 1,
+         2
+ORDER BY 1, 2, 3 DESC;
+
+/* Correlacao entre pais e artistas com mais de 8 vendas */
+
+SELECT
+  C.Country AS country,
+  A2.Name AS artist,
+  COUNT(I.InvoiceId) AS qty
+FROM Invoice I
+INNER JOIN InvoiceLine L
+  ON I.InvoiceId = L.InvoiceId
+INNER JOIN Track T
+  ON L.TrackId = T.TrackId
+INNER JOIN Album A
+  ON T.AlbumId = A.AlbumId
+INNER JOIN Artist A2
+  ON A.ArtistId = A2.ArtistId
+INNER JOIN Customer C
+  ON I.CustomerId = C.CustomerId
+GROUP BY 1,
+         2
+HAVING COUNT(I.InvoiceId) >= 8
+ORDER BY 1, 2, 3 DESC;
+
+/* Desempenho anual de vendas por representante */
+
+
+SELECT
+  E.FirstName + ' ' + E.LastName AS representative_name,
+  strftime('%Y', I.InvoiceDate) AS sales_yr,
+  COUNT(I.InvoiceId) AS qty
+FROM Employee e
+INNER JOIN Customer C
+  ON e.EmployeeId = C.SupportRepId
+INNER JOIN Invoice I
+  ON C.CustomerId = I.CustomerId
+WHERE e.Title = 'Sales Support Agent'
+GROUP BY 1,
+         2
+UNION
+SELECT
+  'Total',
+  strftime('%Y', InvoiceDate) AS sales_yr,
+  COUNT(InvoiceId) AS qty
+FROM Invoice
+GROUP BY 1,
+         2;
+
+/* Correlacao entre pais e vendas realizadas por representante */
+
+SELECT
+  COALESCE(C.Country, 'No sales') AS country,
+  E.FirstName + ' ' + E.LastName AS representative_name,
+  COUNT(I.InvoiceId) AS qty
+FROM Employee e
+LEFT JOIN Customer C
+  ON e.EmployeeId = C.SupportRepId
+LEFT JOIN Invoice I
+  ON C.CustomerId = I.CustomerId
+WHERE e.Title = 'Sales Support Agent'
+GROUP BY 1,
+         2
+HAVING COUNT(I.InvoiceId) >= 8
+ORDER BY 1, 2, 3 DESC;
